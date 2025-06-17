@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NOAA Tornado Visualizer</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌪️ NOAA Tornado Visualizer</h1>
+            <div class="status-bar">
+                <div class="status-indicator">
+                    <div class="status-dot" id="statusDot"></div>
+                    <span id="statusText">Simulation Active</span>
+                </div>
+                <button class="btn" onclick="resetSimulation()">Reset</button>
+                <button class="btn" onclick="togglePause()" id="pauseBtn">Pause</button>
+                <button class="btn success" onclick="spawnSupercell()" id="spawnSupercellBtn">Spawn Supercell</button>
+                <button class="btn danger" onclick="triggerOutbreak()" id="triggerOutbreakBtn">Tornado Outbreak</button>
+                <button class="btn" onclick="showProbeLaunchOptions()" id="launchProbeBtn">Launch Probe</button>
+                <button class="btn" onclick="showHelpModal()">Help</button>
+                <button class="btn" onclick="toggleAutoRun()" id="autoRunBtn">Auto-run</button>
+                <button class="btn info" onclick="showFullAbilityListModal()">ℹ️</button> <!-- New button for full ability list -->
+            </div>
+        </div>
+
+        <div class="controls">
+            <div class="control-group">
+                <h3>Atmospheric Conditions</h3>
+                <div class="slider-container">
+                    <label for="surfaceTemp">Surface Temperature (°F)</label>
+                    <input type="range" id="surfaceTemp" min="50" max="104" value="81" oninput="updateSimulation()">
+                    <span class="value-display" id="surfaceTempValue">81°F</span>
+                </div>
+                <div class="slider-container">
+                    <label for="upperTemp">Upper Level Temperature (°F)</label>
+                    <input type="range" id="upperTemp" min="-76" max="-4" value="-56" oninput="updateSimulation()">
+                    <span class="value-display" id="upperTempValue">-56°F</span>
+                </div>
+                <div class="slider-container">
+                    <label for="humidity">Humidity (%)</label>
+                    <input type="range" id="humidity" min="30" max="100" value="73" oninput="updateSimulation()">
+                    <span class="value-display" id="humidityValue">73%</span>
+                </div>
+                <div class="slider-container">
+                    <label for="windShear">Wind Shear (m/s/km)</label>
+                    <input type="range" id="windShear" min="0" max="20" value="10" step="0.5" oninput="updateSimulation()">
+                    <span class="value-display" id="windShearValue">10 m/s/km</span>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <h3>Environmental Controls</h3>
+                <div class="slider-container">
+                    <label for="surfacePressure">Surface Pressure (hPa)</label>
+                    <input type="range" id="surfacePressure" min="980" max="1030" value="987" oninput="updateSimulation()">
+                    <span class="value-display" id="surfacePressureValue">987 hPa</span>
+                </div>
+                <div class="slider-container">
+                    <label for="stormMotion">Storm Motion Speed (mph)</label>
+                    <input type="range" id="stormMotion" min="10" max="60" value="27" oninput="updateSimulation()">
+                    <span class="value-display" id="stormMotionValue">27 mph</span>
+                </div>
+                <div class="slider-container">
+                    <label for="lowLevelJet">Low Level Jet (m/s)</label>
+                    <input type="range" id="lowLevelJet" min="5" max="35" value="17" oninput="updateSimulation()">
+                    <span class="value-display" id="lowLevelJetValue">17 m/s</span>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <h3>Visualization Options</h3>
+                <div class="checkbox-container">
+                    <input type="checkbox" id="showWindVectors" onchange="updateSimulation()">
+                    <label for="showWindVectors">Show Wind Vectors</label>
+                </div>
+                <div class="checkbox-container">
+                    <input type="checkbox" id="showTornadoPath" checked onchange="updateSimulation()">
+                    <label for="showTornadoPath">Show Tornado Paths</label>
+                </div>
+                <div class="checkbox-container">
+                    <input type="checkbox" id="showDebris" checked onchange="updateSimulation()">
+                    <label for="showDebris">Show Debris Field</label>
+                </div>
+                <div class="checkbox-container">
+                    <input type="checkbox" id="showVorticity" onchange="updateSimulation()">
+                    <label for="showVorticity">Show Vorticity Field</label>
+                </div>
+                <div class="checkbox-container">
+                    <input type="checkbox" id="showWindyEffect" checked onchange="updateSimulation()">
+                    <label for="showWindyEffect">Show Windy Effect</label>
+                </div>
+                <div class="checkbox-container">
+                    <input type="checkbox" id="showMistyEffect" onchange="updateSimulation()">
+                    <label for="showMistyEffect">Show Misty Effect</label>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <h3>Intercept Teams</h3>
+                <select id="interceptTeamSelect" onchange="handleTeamSelectChange()">
+                    <!-- Options will be dynamically populated by JavaScript -->
+                </select>
+                <button class="btn success" onclick="deploySelectedTeam()" id="deployTeamBtn">Deploy Selected Team</button>
+                <p style="font-size:10px; color:#b0bec5; margin-top:5px;" id="deployHint">Select a team, then click on a tornado to deploy.</p>
+            </div>
+
+            <div class="control-group">
+                <h3>Time Controls</h3>
+                <div class="slider-container">
+                    <label for="simSpeed">Simulation Speed</label>
+                    <input type="range" id="simSpeed" min="0.1" max="3" value="1" step="0.1" oninput="updateSimulation()">
+                    <span class="value-display" id="simSpeedValue">1x</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="simulation-area" id="simulationArea">
+            <canvas id="simulationCanvas"></canvas>
+            
+            <div class="tornado-info" id="tornadoInfo" style="display: none;">
+                <h4 style="color: #4fc3f7; margin-bottom: 10px;" id="tornadoInfoTitle">Active Tornado</h4>
+                <div style="font-size: 12px;">
+                    <div>Status: <span id="tornadoStatus">Developing</span></div>
+                    <div>Duration: <span id="tornadoDuration">0s</span></div>
+                    <div>Path Length: <span id="pathLength">0 mi</span></div> <!-- Will now show ratio miles -->
+                    <div>Width: <span id="currentWidth">0 mi</span></div> <!-- Will now show ratio miles -->
+                    <div>Damage Rating: <span id="damageRating">EF0</span></div>
+                    <div>Wind Speed: <span id="tornadoWindSpeed">0 mph</span></div>
+                    <div>Direction: <span id="tornadoDirection">N/A</span></div>
+                </div>
+                <div class="tornado-nav-arrows">
+                    <button id="prevTornadoBtn" onclick="displayPreviousTornado(event)">&#9664;</button> <!-- Left arrow -->
+                    <button id="nextTornadoBtn" onclick="displayNextTornado(event)">&#9654;</button> <!-- Right arrow -->
+                </div>
+            </div>
+            
+            <div class="radar-overlay" id="radarOverlay"> <!-- Added id="radarOverlay" -->
+                <canvas id="radarCanvas" width="200" height="200"></canvas>
+                <div style="text-align: center; margin-top: 5px; font-size: 10px; color: #4fc3f7;">
+                    Doppler Radar
+                </div>
+            </div>
+
+            <div class="compass-rose">
+                <div class="north">N</div>
+                <div class="northeast">NE</div>
+                <div class="east">E</div>
+                <div class="southeast">SE</div>
+                <div class="south">S</div>
+                <div class="southwest">SW</div>
+                <div class="west">W</div>
+                <div class="northwest">NW</div>
+            </div>
+
+            <div class="interaction-hint" id="interactionHint">
+                Click to spawn storm cells
+            </div>
+        </div>
+
+        <div class="data-panel">
+            <div id="alerts"></div>
+            
+            <h3 style="color: #4fc3f7; margin-bottom: 15px;">Current Conditions</h3>
+            
+            <div class="data-item">
+                <span class="data-label">CAPE</span>
+                <span class="data-value" id="capeValue">0 J/kg</span>
+            </div>
+            
+            <div class="data-item">
+                <span class="data-label">Storm-Relative Helicity</span>
+                <span class="data-value" id="helicityValue">0 m²/s²</span>
+            </div>
+            
+            <div class="data-item">
+                <span class="data-label">Bulk Shear (0-6km)</span>
+                <span class="data-value" id="bulkShearValue">0 m/s</span>
+            </div>
+            
+            <div class="data-item">
+                <span class="data-label">Supercell Composite</span>
+                <span class="data-value" id="supercellValue">0</span>
+            </div>
+            
+            <div class="data-item">
+                <span class="data-label">Significant Tornado Parameter</span>
+                <span class="data-value" id="stpValue">0</span>
+            </div>
+            
+            <div class="data-item">
+                <span class="data-label">Energy Helicity Index</span>
+                <span class="data-value" id="ehiValue">0</span>
+            </div>
+
+            <h3 style="color: #4fc3f7; margin: 20px 0 15px 0;">Probe Data</h3>
+            <div id="probeData" style="font-size: 12px; color: #b0bec5;">
+                <p id="probeStatus">No probe launched.</p>
+                <p id="probeWind">Wind Speed: N/A</p>
+                <p id="probePressure">Pressure Drop: N/A</p>
+                <p id="probeDebris">Max Debris Velocity: N/A</p>
+            </div>
+
+            <h3 style="color: #4fc3f7; margin: 20px 0 15px 0;">Intercept Team Status</h3>
+            <div id="interceptTeamStatus" style="font-size: 12px; color: #b0bec5;">
+                <p>No teams deployed.</p>
+            </div>
+
+            <h3 style="color: #4fc3f7; margin: 20px 0 15px 0;">Active Tornadoes</h3>
+            <div id="tornadoList"></div>
+
+            <h3 style="color: #4fc3f7; margin: 20px 0 15px 0;">Storm Statistics</h3>
+            
+            <div class="data-item">
+                <span class="data-label">Total Tornadoes</span>
+                <span class="data-value" id="totalTornadoes">0</span>
+            </div>
+            
+            <div class="data-item">
+                <span class="data-label">Active Storms</span>
+                <span class="data-value" id="activeStorms">0</span>
+            </div>
+            
+            <div class="data-item">
+                <span class="data-label">Peak Intensity</span>
+                <span class="data-value" id="peakIntensity">EF0</span>
+            </div>
+            
+            <!-- Removed Longest Track from here as per request -->
+            <!-- <div class="data-item">
+                <span class="data-label">Longest Track</span>
+                <span class="data-value" id="longestTrack">0 mi</span>
+            </div> -->
+
+            <div class="version-display">ver. 1.10.4</div>
+        </div>
+    </div>
+
+    <!-- Probe Launch Modal -->
+    <div id="probeModal" class="probe-modal">
+        <div class="probe-modal-content">
+            <span class="close-button" onclick="hideProbeModal()">&times;</span>
+            <h2>Launch Probe Options</h2>
+            <p>Choose how you want to launch the probe:</p>
+            <button class="btn" onclick="launchProbeNormally()">Launch Normally (from a corner)</button>
+            <p style="margin: 15px 0 10px;">- OR -</p>
+            <select id="probeTeamSelect" style="display: block; width: calc(100% - 10px); margin: 0 auto 10px;">
+                <option value="" disabled selected>Select Deployed Team</option>
+            </select>
+            <button class="btn success" onclick="launchProbeFromTeam()" id="launchFromTeamBtn">Launch from Selected Team</button>
+        </div>
+    </div>
+
+
+    <!-- Help Modal -->
+    <div id="helpModal" class="help-modal">
+        <div class="help-modal-content">
+            <span class="close-button" onclick="hideHelpModal()">&times;</span>
+            <h2>Simulation Controls and Data Explained</h2>
+
+            <h4>Atmospheric Conditions</h4>
+            <ul>
+                <li><strong>Surface Temperature (°F):</strong> Represents the temperature of the air near the ground. Higher surface temperatures contribute to greater atmospheric instability and a higher potential for storms.</li>
+                <li><strong>Upper Level Temperature (°F):</b> Represents the temperature of the air in the upper atmosphere. A large temperature difference between the surface and upper levels (i.e., colder upper levels) creates a more unstable atmosphere, favoring stronger updrafts and storm development.</li>
+                <li><strong>Humidity (%):</strong> The amount of moisture in the air. Higher humidity provides more fuel for thunderstorms and tornado formation, as moisture is essential for cloud and precipitation development.</li>
+                <li><strong>Wind Shear (m/s/km):</strong> The change in wind speed or direction with height. Significant wind shear, particularly "directional shear" (winds changing direction with height, creating rotation), is crucial for the development of supercells and tornadoes.</li>
+            </ul>
+
+            <h4>Environmental Controls</h4>
+            <ul>
+                <li><strong>Surface Pressure (hPa):</strong> The atmospheric pressure at the ground level. Lower surface pressure can indicate a stronger low-pressure system, which is often associated with more intense weather systems and potentially stronger storms.</li>
+                <li><strong>Storm Motion Speed (mph):</strong> Controls how fast the storm cells and tornadoes generally move across the simulation area. A higher speed means faster-moving systems.</li>
+                <li><strong>Low Level Jet (m/s):</strong> A narrow band of strong winds in the lower atmosphere (typically a few hundred to a few thousand meters above ground). A strong low-level jet enhances wind shear, especially "speed shear" (winds increasing in speed with height), which can increase the potential for tornadic rotation.</li>
+            </ul>
+
+            <h4>Visualization Options</h4>
+            <ul>
+                <li><strong>Show Wind Vectors:</strong> Toggles the display of arrows indicating wind direction and relative strength across the simulation area.</li>
+                <li><strong>Show Tornado Paths:</strong> Displays the track left by active and dissipated tornadoes, showing their movement across the ground.</li>
+                <li><strong>Show Debris Field:</strong> Visualizes particles being lifted and scattered by the tornado's strong winds, indicating areas of intense rotation and damage.</li>
+                <li><strong>Show Vorticity Field:</b> Highlights areas of atmospheric rotation, which is a key indicator of where tornadoes might form or are currently active. Stronger vorticity is shown with more intense colors.</li>
+                <li><strong>Show Windy Effect:</strong> Displays subtle visual lines indicating wind movement and strength.</li>
+                <li><strong>Show Misty Effect:</strong> Adds a soft, translucent mist that correlates with rain intensity.</li>
+            </ul>
+
+            <h4>Time Controls</h4>
+            <ul>
+                <li><strong>Simulation Speed:</strong> Adjusts the rate at which the simulation progresses. Higher values make the simulation run faster.</li>
+            </ul>
+
+            <h4>Current Conditions (Data Panel)</h4>
+            <ul>
+                <li><strong>CAPE (Convective Available Potential Energy) (J/kg):</strong> A measure of atmospheric instability. Higher CAPE values indicate more energy available for updrafts, favoring stronger thunderstorms. Typically, values over 1000 J/kg are considered significant.</li>
+                <li><strong>Storm-Relative Helicity (m²/s²):</strong> Measures the potential for a storm's updraft to acquire rotation from the surrounding environment's wind shear. Higher values ($>150-200 \, \text{m}^2/\text{s}^2$) are associated with increased potential for supercell and tornadic development.</li>
+                <li><strong>Bulk Shear (0-6km) (m/s):</strong> Represents the overall change in wind between the surface and 6km altitude. Strong bulk shear is critical for organizing thunderstorms into supercells.</li>
+                <li><strong>Supercell Composite:</strong> An index that combines CAPE, Helicity, and Shear to estimate the likelihood of supercell formation. Higher values indicate a more favorable environment for supercells.</li>
+                <li><strong>Significant Tornado Parameter (STP):</strong> A composite index used to identify environments favorable for significant tornadoes (EF2+). It considers CAPE, Helicity, Low-Level Shear, and CIN. Higher values indicate a greater potential for strong tornadoes.</li>
+                <li><strong>Energy Helicity Index (EHI):</strong> Combines CAPE and Helicity into a single value, indicating the potential for rotating thunderstorms. Higher values suggest a greater chance of supercells and tornadoes.</li>
+            </ul>
+
+            <h4>Probe Data (Data Panel)</h4>
+            <ul>
+                <li>This section displays real-time, high-precision data from a launched weather probe that has successfully intercepted an active tornado. It includes estimated wind speed, pressure drop, and max debris velocity, offering a unique close-up view of the tornado's destructive power.</li>
+            </ul>
+
+            <h4>Intercept Team Status (Data Panel)</h4>
+            <ul>
+                <li>Provides real-time updates on the status of all deployed intercept teams, including their target tornado, current state (e.g., En Route, Deployed, Lofted, Returning), and current wind speed experienced.</li>
+            </ul>
+
+            <h4>Active Tornadoes (Data Panel)</h4>
+            <ul>
+                <li>Lists currently active tornadoes, showing their unique ID, EF rating, current estimated **Wind Speed (mph)**, and current **Phase** (Forming, Organizing, Mature, Shrinking, Decaying, Dissipating).</li>
+            </ul>
+
+            <h4>Storm Statistics (Data Panel)</h4>
+            <ul>
+                <li><strong>Total Tornadoes:</strong> The cumulative count of all tornadoes that have formed during the simulation.</li>
+                <li><strong>Active Storms:</strong> The number of storm cells currently active in the simulation.</li>
+                <li><strong>Peak Intensity:</strong> The highest EF rating observed among all tornadoes during the simulation ($EF0-EF5$).
+            </ul>
+        </div>
+    </div>
+
+    <!-- Full Ability List Modal (New) -->
+    <div id="fullAbilityListModal" class="help-modal">
+        <div class="help-modal-content">
+            <span class="close-button" onclick="hideFullAbilityListModal()">&times;</span>
+            <h2>Full Feature List: NOAA Tornado Visualizer</h2>
+            
+            <h4>Core Simulation Features</h4>
+            <ul>
+                <li><strong>Real-time Simulation:</strong> Dynamic weather simulation with continuously evolving atmospheric conditions, storm systems, and tornadoes.</li>
+                <li><strong>Tornado Lifecycle:</strong> Tornadoes progress through distinct phases (Forming, Organizing, Mature, Shrinking, Decaying, Dissipating) with corresponding visual and intensity changes.</li>
+                <li><strong>Dynamic EF Ratings:</strong> Tornadoes are assigned Enhanced Fujita (EF) scale ratings ($EF0-EF5$) based on their estimated wind speed and real-world equivalent width, updating in real-time.</li>
+                <li><strong>Physics-Based Effects:</strong> Includes simulated debris fields, pressure drops within tornado cores, and realistic movement patterns influenced by environmental factors.</li>
+            </ul>
+
+            <h4>User Controls & Inputs</h4>
+            <ul>
+                <li><strong>Atmospheric Condition Sliders:</strong>
+                    <ul>
+                        <li><strong>Surface Temperature:</strong> Adjusts ground-level air temperature, influencing atmospheric instability.</li>
+                        <li><strong>Upper Level Temperature:</strong> Controls upper atmosphere temperature; critical for creating temperature differentials and instability.</li>
+                        <li><strong>Humidity:</strong> Sets moisture content in the air, fueling storm development.</li>
+                        <li><strong>Wind Shear:</strong> Modifies the change in wind speed/direction with height, vital for supercell and tornado rotation.</li>
+                    </ul>
+                </li>
+                <li><strong>Environmental Control Sliders:</strong>
+                    <ul>
+                        <li><strong>Surface Pressure:</strong> Influences overall storm intensity and low-pressure system strength.</li>
+                        <li><strong>Storm Motion Speed:</strong> Determines the general movement speed of storm systems and tornadoes.</li>
+                        <li><strong>Low Level Jet:</strong> Adjusts the strength of low-level winds, enhancing wind shear and rotational potential.</li>
+                    </ul>
+                </li>
+                <li><strong>Simulation Speed:</strong> Allows users to accelerate or decelerate the simulation rate.</li>
+                <li><strong>Manual Storm Spawning:</strong> Click anywhere on the map to manually spawn a regular storm cell.</li>
+                <li><strong>Manual Element Removal:</strong> Right-click on any storm cell, supercell, or tornado to remove it from the simulation. Right-clicking an active intercept team will send it back to base.</li>
+                <li><strong>Spawn Supercell Button:</strong> Manually generates a powerful supercell (larger and more intense than regular storm cells).</li>
+                <li><strong>Tornado Outbreak Button:</strong> Triggers the rapid formation of multiple storm cells across the map.</li>
+                <li><strong>Pause/Resume Button:</strong> Pauses or resumes the entire simulation.</li>
+                <li><strong>Reset Button:</strong> Clears all active elements (storms, tornadoes, probes, teams) and resets simulation time and statistics to their initial state. If Auto-run was active, it remains active.</li>
+            </ul>
+
+            <h4>Visualization & Immersion</h4>
+            <ul>
+                <li><strong>Interactive Map:</strong> A large central canvas displaying storm systems, tornadoes, and deployed teams.</li>
+                <li><strong>Dynamic Doppler Radar:</strong> A mini-radar overlay that visually represents:
+                    <ul>
+                        <li><strong>Realistic Storm Shapes:</strong> Storm cells and supercells are rendered as more organic, multi-shaded cloud-like forms.</li>
+                        <li><strong>Red Tornadoes:</strong> Active tornadoes appear as red dots/shapes.</li>
+                        <li><strong>Dark Gray Storm Cells:</strong> Storms are shown as dark gray on the radar.</li>
+                        <li><strong>Blue Rain:</strong> Rain activity is shown with lighter blue particles.</li>
+                        <li><strong>White Hail:</strong> Hail activity is shown with white particles.</li>
+                        <li><strong>Yellow Lightning:</strong> Lightning strikes are briefly highlighted in yellow.</li>
+                        <li><strong>Radar Sweep Line:</strong> A rotating line indicating the radar's scan.</li>
+                    </ul>
+                </li>
+                <li><strong>Screen Shake:</strong>
+                    <ul>
+                        <li><strong>Dynamic Intensity:</strong> Screen shake intensity is tied to the strongest active tornado's EF rating:
+                            <ul>
+                                <li>**EF0-EF1:** Very light rumbling.</li>
+                                <li>**EF2-EF3:** A little bit heavier rumbling.</li>
+                                <li>**EF4-EF5:** Visibly heavier rumbling than EF2/EF3.</li>
+                            </ul>
+                        </li>
+                        <li><strong>Lightning Boost:</strong> An additional, short, visible jolt of screen shake occurs during lightning strikes.</li>
+                    </ul>
+                </li>
+                <li><strong>Visual Effects Toggles:</strong>
+                    <ul>
+                        <li><strong>Show Wind Vectors:</strong> Visualizes general wind direction and strength.</li>
+                        <li><strong>Show Tornado Paths:</strong> Displays the historical tracks of tornadoes.</li>
+                        <li><strong>Show Debris Field:</strong> Renders flying debris near tornadoes.</li>
+                        <li><strong>Show Vorticity Field:</strong> Illustrates rotational energy in the atmosphere around storms.</li>
+                        <li><strong>Show Windy Effect:</strong> Adds subtle visual cues for atmospheric turbulence and wind.</li>
+                        <li><strong>Show Misty Effect:</strong> Introduces a transparent mist effect, intensifying with rain.</li>
+                    </ul>
+                </li>
+                <li><strong>Compass Rose:</strong> Provides cardinal direction orientation on the simulation map.</li>
+                <li><strong>Interaction Hints:</strong> Provides helpful on-screen instructions for user interaction.</li>
+                <li><strong>Sound Effects:</strong> Includes a tornado siren and NOAA warning sound effect when tornadoes form.</li>
+            </ul>
+
+            <h4>Information Displays & Analytics</h4>
+            <ul>
+                <li><strong>Current Conditions Panel:</strong> Displays real-time atmospheric metrics:
+                    <ul>
+                        <li><strong>CAPE:</strong> Convective Available Potential Energy (J/kg).</li>
+                        <li><strong>Storm-Relative Helicity (SRH):</strong> Potential for storm updraft rotation (m²/s²).</li>
+                        <li><strong>Bulk Shear (0-6km):</strong> Overall change in wind with height (m/s).</li>
+                        <li><strong>Supercell Composite Parameter (SCP):</strong> Likelihood of supercell formation.</li>
+                        <li><strong>Significant Tornado Parameter (STP):</strong> Likelihood of significant (EF2+) tornado formation.</li>
+                        <li><strong>Energy Helicity Index (EHI):</strong> Combined CAPE and Helicity for rotating storms.</li>
+                    </ul>
+                </li>
+                <li><strong>Probe Data Panel:</strong> Shows real-time data (wind speed, pressure drop, debris velocity) from launched weather probes that intercept tornadoes.</li>
+                <li><strong>Intercept Team Status Panel:</strong> Provides real-time updates on all deployed intercept teams, their status (En Route, Deploying, Deployed, Lofted, Returning), and experienced wind speeds.</li>
+                <li><strong>Active Tornadoes List:</strong> Lists all currently active tornadoes with their ID, EF rating, wind speed, and current phase.</li>
+                <li><strong>Detailed Tornado Info Box:</strong> Displays comprehensive data for the currently selected or strongest active tornado (Status, Duration, Path Length, Width, Damage Rating, Wind Speed, Direction). Navigation arrows allow cycling through active tornadoes.</li>
+                <li><strong>Storm Statistics:</strong> Tracks total tornadoes, active storms, and peak EF intensity observed during the simulation.</li>
+                <li><strong>Alert System:</strong> Provides timely on-screen messages for critical events like tornado touchdowns, team deployments, probe data, and mode changes.</li>
+            </ul>
+
+            <h4>Automated Modes & Advanced Controls</h4>
+            <ul>
+                <li><strong>Auto-Run Mode:</strong>
+                    <ul>
+                        <li>Automatically manages storm spawning (including supercells if the map is empty for a period), team deployments, and probe launches.</li>
+                        <li>Allows for multiple supercells and tornadoes to coexist on the map.</li>
+                        <li>Supercells are spawned based on current atmospheric conditions.</li>
+                        <li>Auto-run state persists across simulation resets.</li>
+                    </ul>
+                </li>
+                <li><strong>Intercept Team Management:</strong>
+                    <ul>
+                        <li>Select from various realistic intercept vehicles (TIV1, TIV2, DOM1, DOM2, DOM3, TORNADO ATTACK, TITUS).</li>
+                        <li>Deploy teams to target specific active tornadoes; teams navigate to intercept predicted paths.</li>
+                        <li>Teams have distinct wind thresholds for undeployed and deployed states, triggering a "Lofted" state if exceeded.</li>
+                        <li><strong>Single Team per Tornado:</strong> Only one intercept team can target a given tornado at any time. If a tornado is already targeted (en route, deployed, lofted, or returning), other teams cannot be assigned to it.</li>
+                        <li>Teams automatically return to base when their target tornado dissipates or if manually recalled.</li>
+                        <li>Team capacity is replenished over time.</li>
+                    </ul>
+                </li>
+                <li><strong>Probe Launch Options:</strong>
+                    <ul>
+                        <li>Launch probes from a random corner of the map.</li>
+                        <li>Launch probes directly from an already deployed intercept team for close-range data collection.</li>
+                    </ul>
+                </li>
+                <li><strong>CAPE Randomization:</strong> The Convective Available Potential Energy (CAPE) value intelligently randomizes and smoothly transitions to a new value after each tornado dissipates, simulating changing atmospheric dynamics between events.</li>
+            </ul>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

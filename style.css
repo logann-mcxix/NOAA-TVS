@@ -1,0 +1,572 @@
+/* General styling */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #1e3c72, #2a5298); /* Dark blue gradient background */
+    color: white;
+    overflow: hidden; /* Prevent scrollbars */
+}
+
+/* Main layout container using CSS Grid */
+.container {
+    display: grid;
+    grid-template-columns: 320px 1fr 280px; /* Left sidebar, main simulation, right data panel */
+    grid-template-rows: 60px 1fr; /* Header row, main content row */
+    height: 100vh; /* Full viewport height */
+    gap: 10px; /* Spacing between grid items */
+    padding: 10px;
+}
+
+/* Header section */
+.header {
+    grid-column: 1 / -1; /* Spans all columns */
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+    backdrop-filter: blur(10px); /* Frosted glass effect */
+}
+
+/* Control panel on the left */
+.controls {
+    background: rgba(0, 0, 0, 0.4);
+    border-radius: 10px;
+    padding: 20px;
+    backdrop-filter: blur(10px);
+    overflow-y: auto; /* Enable scrolling for many controls */
+}
+
+/* Main simulation area */
+.simulation-area {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+    position: relative;
+    overflow: hidden;
+    backdrop-filter: blur(5px);
+    cursor: crosshair; /* Indicate interactivity */
+}
+
+/* Data panel on the right */
+.data-panel {
+    background: rgba(0, 0, 0, 0.4);
+    border-radius: 10px;
+    padding: 20px;
+    backdrop-filter: blur(10px);
+    overflow-y: auto; /* Enable scrolling for data */
+    position: relative; /* Needed for version-display absolute positioning */
+}
+
+/* Grouping for controls */
+.control-group {
+    margin-bottom: 20px;
+}
+
+.control-group h3 {
+    color: #4fc3f7; /* Light blue heading */
+    margin-bottom: 10px;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* Slider specific styling */
+.slider-container {
+    margin-bottom: 15px;
+}
+
+.slider-container label {
+    display: block;
+    font-size: 12px;
+    margin-bottom: 5px;
+    color: #b0bec5; /* Light grey text */
+}
+
+input[type="range"] {
+    width: 100%;
+    -webkit-appearance: none; /* Remove default slider style */
+    height: 4px;
+    background: rgba(255, 255, 255, 0.2); /* Transparent track */
+    border-radius: 2px;
+    outline: none;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    background: #4fc3f7; /* Blue thumb */
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+.value-display {
+    color: #4fc3f7;
+    font-weight: bold;
+    font-size: 11px;
+}
+
+/* Canvas element inside simulation area */
+canvas {
+    width: 100%;
+    height: 100%;
+    border-radius: 10px;
+}
+
+/* Data panel item styling */
+.data-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.data-label {
+    font-size: 12px;
+    color: #b0bec5;
+}
+
+.data-value {
+    font-size: 14px;
+    font-weight: bold;
+    color: #4fc3f7;
+}
+
+/* Alert messages */
+.alert {
+    background: rgba(255, 87, 34, 0.8); /* Orange background */
+    border-radius: 5px;
+    padding: 10px;
+    margin-bottom: 10px;
+    font-size: 12px;
+    animation: pulse 2s infinite; /* Pulsing effect */
+}
+
+.warning {
+    background: rgba(255, 193, 7, 0.8); /* Yellow background */
+}
+
+.severe {
+    background: rgba(244, 67, 54, 0.9); /* Red background */
+    animation: flash 1s infinite; /* Flashing effect */
+}
+
+.success {
+    background: rgba(76, 175, 80, 0.8); /* Green background */
+}
+
+.info {
+    background: rgba(33, 150, 243, 0.8); /* Blue background for info */
+}
+
+/* Keyframe animations for alerts */
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+@keyframes flash {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+}
+
+/* Radar overlay */
+.radar-overlay {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    width: 220px;
+    height: 220px;
+    background: rgba(0, 0, 0, 0.9);
+    border-radius: 15px;
+    border: 2px solid #4fc3f7;
+    padding: 10px;
+}
+
+/* Tornado info panel */
+.tornado-info {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    background: rgba(0, 0, 0, 0.8);
+    border-radius: 10px;
+    padding: 15px;
+    min-width: 200px;
+    border: 1px solid #4fc3f7;
+    z-index: 10; /* Ensure it's above canvas */
+}
+
+/* Buttons */
+.btn {
+    background: linear-gradient(45deg, #4fc3f7, #29b6f6); /* Blue gradient */
+    border: none;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.3s ease; /* Smooth hover effects */
+    margin: 0 5px;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(79, 195, 247, 0.4);
+}
+
+.btn:disabled {
+    background: linear-gradient(45deg, #607d8b, #78909c); /* Greyed out for disabled */
+    cursor: not-allowed;
+}
+
+.btn.danger {
+    background: linear-gradient(45deg, #f44336, #d32f2f); /* Red gradient */
+}
+
+.btn.success {
+    background: linear-gradient(45deg, #4caf50, #388e3c); /* Green gradient */
+}
+
+.btn.toggle-on {
+    background: linear-gradient(45deg, #4caf50, #388e3c); /* Green for auto-run active */
+}
+
+
+/* Status bar in header */
+.status-bar {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+}
+
+.status-indicator {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #4caf50; /* Green dot for active */
+    animation: blink 1s infinite;
+}
+
+.status-dot.warning {
+    background: #ff9800; /* Orange dot for warning/paused */
+}
+
+.status-dot.danger {
+    background: #f44336; /* Red dot for critical/severe */
+}
+
+/* Keyframe animation for status dot */
+@keyframes blink {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0.3; }
+}
+
+/* Interaction hint text */
+.interaction-hint {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    background: rgba(0, 0, 0, 0.7);
+    padding: 10px;
+    border-radius: 5px;
+    font-size: 11px;
+    color: #b0bec5;
+}
+
+/* Styling for tornado paths (not directly used by Tornado class path drawing) */
+.tornado-path {
+    stroke: rgba(255, 255, 255, 0.3);
+    stroke-width: 2;
+    fill: none;
+    stroke-dasharray: 5, 5;
+}
+
+/* Checkbox styling */
+.checkbox-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.checkbox-container input[type="checkbox"] {
+    accent-color: #4fc3f7; /* Blue accent color for checkboxes */
+}
+
+.checkbox-container label {
+    font-size: 12px;
+    color: #b0bec5;
+    margin: 0;
+}
+
+/* Dropdown styling */
+select {
+    width: 100%;
+    padding: 8px;
+    border-radius: 5px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background-color: rgba(0, 0, 0, 0.3);
+    color: white;
+    font-size: 12px;
+    margin-bottom: 10px;
+    -webkit-appearance: none; /* Remove default arrow on select */
+    -moz-appearance: none;
+    appearance: none;
+    background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23b0bec5%22%20d%3D%22M287%2C197.3L146.2%2C56.6L5.4%2C197.3h281.6z%22%2F%3E%3C%2Fsvg%3E'); /* Custom arrow */
+    background-repeat: no-repeat;
+    background-position: right 8px top 50%;
+    background-size: 8px auto;
+}
+select:focus {
+    outline: none;
+    border-color: #4fc3f7;
+}
+option {
+    background-color: #1e3c72; /* Darker background for options */
+    color: white;
+}
+option:disabled {
+    color: #607d8b; /* Grey out disabled options */
+}
+
+/* Help Modal Styling */
+.help-modal, .probe-modal {
+    display: none; /* Hidden by default */
+    position: fixed; /* Stay in place */
+    z-index: 100; /* Sit on top */
+    left: 0;
+    top: 0;
+    width: 100%; /* Full width */
+    height: 100%; /* Full height */
+    overflow: auto; /* Enable scroll if needed */
+    background-color: rgba(0,0,0,0.7); /* Black w/ opacity */
+    backdrop-filter: blur(5px);
+}
+
+.help-modal-content, .probe-modal-content {
+    background: linear-gradient(135deg, #2a5298, #1e3c72);
+    margin: 5% auto; /* 5% from the top and centered */
+    padding: 30px;
+    border-radius: 15px;
+    width: 80%; /* Could be more responsive */
+    max-width: 800px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.5);
+    animation: fadeIn 0.3s ease-out;
+    max-height: 90vh; /* Max height to allow scrolling */
+    overflow-y: auto; /* Enable scrolling for content */
+}
+
+.probe-modal-content {
+    max-width: 400px; /* Smaller for probe choice */
+    text-align: center;
+}
+.probe-modal-content .btn {
+    width: calc(100% - 10px); /* Adjust for margin */
+    margin: 5px;
+}
+.probe-modal-content select {
+    margin-bottom: 20px;
+}
+
+
+.help-modal-content h2, .probe-modal-content h2 {
+    color: #4fc3f7;
+    margin-bottom: 20px;
+    font-size: 24px;
+    text-align: center;
+}
+
+.help-modal-content h4 {
+    color: #4fc3f7;
+    margin-top: 20px;
+    margin-bottom: 10px;
+    font-size: 16px;
+    border-bottom: 1px solid rgba(79, 195, 247, 0.3);
+    padding-bottom: 5px;
+}
+
+.help-modal-content p, .help-modal-content ul, .probe-modal-content p {
+    font-size: 14px;
+    line-height: 1.6;
+    margin-bottom: 10px;
+    color: #e0e0e0;
+}
+
+.help-modal-content ul {
+    list-style-type: disc;
+    margin-left: 20px;
+}
+
+.help-modal-content li {
+    margin-bottom: 5px;
+}
+
+.help-modal-content strong {
+    color: #4fc3f7;
+}
+
+.close-button {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.close-button:hover,
+.close-button:focus {
+    color: #fff;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+/* Responsive adjustments */
+@media (max-width: 1200px) {
+    .container {
+        grid-template-columns: 1fr; /* Single column layout */
+        grid-template-rows: auto auto 1fr auto; /* Header, controls, sim, data */
+    }
+
+    .header {
+        grid-column: auto;
+    }
+
+    .radar-overlay, .tornado-info {
+        position: static; /* Remove absolute positioning */
+        margin: 10px auto; /* Center them */
+        width: 90%;
+        max-width: 250px;
+    }
+    .simulation-area {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 768px) {
+    .header {
+        flex-direction: column;
+        height: auto;
+        padding: 10px;
+    }
+    .status-bar {
+        margin-top: 10px;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    .btn {
+        margin: 5px;
+    }
+}
+
+/* Cursor change for target selection */
+.simulation-area.target-mode {
+    cursor: crosshair;
+}
+.simulation-area.target-mode.hover-tornado {
+    cursor: pointer; /* Indicates it's clickable */
+}
+
+/* Version display */
+.version-display {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.4); /* Subtle text */
+    pointer-events: none; /* Make it non-interactive */
+}
+
+/* Compass Rose Styling */
+.compass-rose {
+    position: absolute;
+    bottom: 20px;
+    right: 20px; /* Changed from left: 20px; */
+    width: 80px; /* Adjust size as needed */
+    height: 80px;
+    background: rgba(0, 0, 0, 0.7);
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 10px;
+    font-weight: bold;
+    color: #b0bec5;
+    border: 1px solid rgba(79, 195, 247, 0.3);
+    z-index: 10;
+}
+
+.compass-rose div {
+    position: absolute;
+    transform-origin: center;
+}
+
+.compass-rose .north { transform: translateY(-30px); color: #4fc3f7; }
+.compass-rose .south { transform: translateY(30px); }
+.compass-rose .east { transform: translateX(30px); }
+.compass-rose .southeast { transform: translate(20px, 20px); font-size: 9px; }
+.compass-rose .southwest { transform: translate(-20px, 20px); font-size: 9px; }
+.compass-rose .west { transform: translateX(-30px); }
+.compass-rose .northeast { transform: translate(20px, -20px); font-size: 9px; }
+.compass-rose .northwest { transform: translate(-20px, -20px); font-size: 9px; }
+
+/* Tornado label styling */
+.tornado-label {
+    position: absolute;
+    background-color: rgba(0, 0, 0, 0.7);
+    color: white;
+    font-size: 9px;
+    padding: 2px 5px;
+    border-radius: 3px;
+    transform: translate(-50%, -120%); /* Center above tornado */
+    pointer-events: none; /* Do not interfere with mouse events */
+    white-space: nowrap; /* Prevent text wrapping */
+    z-index: 5; /* Ensure labels are above background but below info panel */
+}
+
+/* Arrows for tornado info box navigation */
+.tornado-nav-arrows {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 10px;
+}
+
+.tornado-nav-arrows button {
+    background: none;
+    border: none;
+    color: #4fc3f7;
+    font-size: 18px;
+    cursor: pointer;
+    padding: 0 5px;
+    transition: color 0.2s ease;
+}
+
+.tornado-nav-arrows button:hover {
+    color: #29b6f6;
+}
+
+.tornado-nav-arrows button:disabled {
+    color: #607d8b;
+    cursor: not-allowed;
+}
+

@@ -248,7 +248,7 @@ function resizeCanvas() {
     }
 
     // Dynamically adjust PIXELS_PER_MILE_SCALE based on canvas width
-    // 1 "ratio mile" is 30% of canvas width.
+    // 1 "ratio mile" = 30% of canvas width.
     PIXELS_PER_MILE_SCALE = canvas.width * 0.3; 
 }
 
@@ -1210,7 +1210,9 @@ class InterceptTeam {
     }
 
     draw() {
-        if (!this.isActive) return;
+        // Only draw if the team is active OR in the 'RETURNING' state (so it can be seen moving back)
+        if (!this.isActive && this.state !== 'RETURNING' && this.state !== 'LOFTED') return;
+
         // Make lofted teams blink for visual effect
         if (this.state === 'LOFTED' && !((Math.floor(simulationState.time / 5) % 2) === 0)) return; // Blink every ~5 frames
 
@@ -1522,30 +1524,30 @@ function updateDataPanel() {
     // Update Intercept Team Status
     const interceptTeamStatusDiv = document.getElementById('interceptTeamStatus');
     interceptTeamStatusDiv.innerHTML = ''; // Clear previous list
-    if (simulationState.interceptTeams.filter(t => t.isActive || t.state === 'RETURNING').length === 0) {
+    // Only show teams that are active (deployed, en route, lofted)
+    // Teams that are 'RETURNING' are no longer considered 'out' and are removed from this display.
+    const teamsToShow = simulationState.interceptTeams.filter(t => t.isActive && t.state !== 'RETURNING');
+    if (teamsToShow.length === 0) {
         interceptTeamStatusDiv.innerHTML = '<p>No teams deployed.</p>';
     } else {
-        simulationState.interceptTeams.forEach(team => {
-            if (team.isActive || team.state === 'RETURNING') { // Show returning teams too
-                const teamStatus = document.createElement('div');
-                teamStatus.className = 'data-item';
-                let statusText = team.state;
-                if (team.state === 'EN_ROUTE' && team.targetTornadoId) {
-                    statusText = `En Route (T${team.targetTornadoId.toString().slice(-4)}) - ${team.currentWindSpeed.toFixed(0)} mph`;
-                } else if (team.state === 'DEPLOYED' && team.targetTornadoId) {
-                    statusText = `Deployed (T${team.targetTornado.id.toString().slice(-4)}) - ${team.currentWindSpeed.toFixed(0)} mph`;
-                } else if (team.state === 'LOFTED') {
-                     statusText = `LOFTED!`;
-                } else if (team.state === 'RETURNING') {
-                     statusText = `Returning to Base`;
-                }
+        teamsToShow.forEach(team => {
+            const teamStatus = document.createElement('div');
+            teamStatus.className = 'data-item';
+            let statusText = team.state;
+            if (team.state === 'EN_ROUTE' && team.targetTornadoId) {
+                statusText = `En Route (T${team.targetTornadoId.toString().slice(-4)}) - ${team.currentWindSpeed.toFixed(0)} mph`;
+            } else if (team.state === 'DEPLOYED' && team.targetTornadoId) {
+                statusText = `Deployed (T${team.targetTornado.id.toString().slice(-4)}) - ${team.currentWindSpeed.toFixed(0)} mph`;
+            } else if (team.state === 'LOFTED') {
+                 statusText = `LOFTED!`;
+            } 
+            // Removed 'RETURNING' case from here as they should not be displayed in "teams out"
 
-                teamStatus.innerHTML = `
-                    <span class="data-label">${team.teamData.name}</span>
-                    <span class="data-value">${statusText}</span>
-                `;
-                interceptTeamStatusDiv.appendChild(teamStatus);
-            }
+            teamStatus.innerHTML = `
+                <span class="data-label">${team.teamData.name}</span>
+                <span class="data-value">${statusText}</span>
+            `;
+            interceptTeamStatusDiv.appendChild(teamStatus);
         });
     }
 
@@ -3023,11 +3025,14 @@ function animate() {
     });
 
     // Update and draw intercept teams
-    simulationState.interceptTeams = simulationState.interceptTeams.filter(team => team.isActive || team.state === 'RETURNING' || team.state === 'LOFTED'); // Keep returning/lofted teams in array until truly gone
-    simulationState.interceptTeams.forEach(team => {
+    // Only keep teams in the array if they are still active (not 'RETURNING' and not completely at base) or 'LOFTED'
+    simulationState.interceptTeams = simulationState.interceptTeams.filter(team => {
         team.update();
         team.draw();
+        // Remove team from array only when it's isActive is false (meaning it's returned to base or lost)
+        return team.isActive; 
     });
+
 
     // Lightning update
     const activeTornadoCount = simulationState.tornadoes.filter(t => t.isActive).length;

@@ -190,7 +190,7 @@ function handleTornadoWarningSounds() {
         isTornadoSirenPlaying = true;
 
         // Play NOAA warning at full volume
-        SOUNDS.noaaWarning.volume = 1.0;
+        SOUNDS.noaaWarning.volume = 0.68;
         SOUNDS.noaaWarning.play();
         isNoaaWarningPlaying = true;
     }
